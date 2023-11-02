@@ -1,0 +1,249 @@
+--$$\        $$$$$$\  $$\   $$\  $$$$$$\  $$$$$$$$\ 
+--$$ |      $$  __$$\ $$$\  $$ |$$  __$$\ $$  _____|
+--$$ |      $$ /  $$ |$$$$\ $$ |$$ /  \__|$$ |      
+--$$ |      $$$$$$$$ |$$ $$\$$ |$$ |      $$$$$\    
+--$$ |      $$  __$$ |$$ \$$$$ |$$ |      $$  __|   
+--$$ |      $$ |  $$ |$$ |\$$$ |$$ |  $$\ $$ |      
+--$$$$$$$$\ $$ |  $$ |$$ | \$$ |\$$$$$$  |$$$$$$$$\ 
+--\________|\__|  \__|\__|  \__| \______/ \________|
+-- coded by Lance/stonerchrist on Discord
+
+
+util.require_natives("2944b", "g")
+local ROOT = menu.my_root()
+local POSITIONING = ROOT:list('Positioning')
+
+local weapon_images = {}
+local resources_dir = filesystem.resources_dir() .. '\\nexthud\\'
+
+if not filesystem.is_dir(resources_dir) then
+    util.toast("The NextHUD resources dir is missing. The script will now exit.")
+    util.stop_script()
+end
+
+for filesystem.list_files(resources_dir) as path do 
+    local gun_image = string.gsub(path, resources_dir, '')
+    local gun_name = string.gsub(gun_image, '.png', '')
+    weapon_images[gun_name] = directx.create_texture(path)
+end
+
+local show_street_area = false 
+ROOT:toggle('Show street/area names', {'showstreet'}, '', function(on)
+    show_street_area = on
+end)
+
+local show_compass = false
+ROOT:toggle('Show compass', {'showcompass'}, '', function(on)
+    show_compass = on
+end)
+
+local show_gunhud = true
+ROOT:toggle('Show gun hud', {'showgunhud'}, '', function(on)
+    show_gunhud = on
+end, true)
+
+ROOT:toggle_loop('Disable vanilla ammo HUD', {'nodefaultgunammo'}, '', function(on)
+    HIDE_HUD_COMPONENT_THIS_FRAME(2)
+end)
+
+
+
+local x_pos = 0.98
+local y_pos = 0.94
+
+local compass_x_pos = 0.5
+local compass_y_pos = 0.03
+
+local gun_x = 0.82
+local gun_y = 0.8
+
+local ammo_clip_x = 0.85
+local ammo_clip_y = 0.79
+
+local ammo_full_x = 0.85
+local ammo_full_y = 0.81
+
+local line_x = 0.857
+local line_y = 0.778
+line_length = 0.04
+
+POSITIONING:slider_float('Street names X', {}, '', 0, 1000, 98, 1, function(val)
+    x_pos = val * 0.01
+end)
+
+POSITIONING:slider_float('Street names Y', {}, '', 0, 1000, 98, 1, function(val)
+    y_pos = val * 0.01
+end)
+
+POSITIONING:slider_float('Compass X', {}, '', 0, 1000, 5, 1, function(val)
+    compass_x_pos = val * 0.01
+end)
+
+POSITIONING:slider_float('Compass Y', {}, '', 0, 1000, 3, 1, function(val)
+    compass_y_pos = val * 0.01
+end)
+
+
+POSITIONING:slider_float('Gun Sprite X', {}, '', 0, 1000, 82, 1, function(val)
+    gun_x = val * 0.01
+end)
+
+POSITIONING:slider_float('Gun Sprite Y', {}, '', 0, 1000, 80, 1, function(val)
+    gun_y = val * 0.01
+end)
+
+POSITIONING:slider_float('Ammo clip X', {}, '', 0, 1000, 85, 1, function(val)
+    ammo_clip_x = val * 0.01
+end)
+
+POSITIONING:slider_float('Ammo clip Y', {}, '', 0, 1000, 79, 1, function(val)
+    ammo_clip_y = val * 0.01
+end)
+
+POSITIONING:slider_float('Ammo total X', {}, '', 0, 1000, 85, 1, function(val)
+    ammo_clip_x = val * 0.01
+end)
+
+POSITIONING:slider_float('Ammo total Y', {}, '', 0, 1000, 81, 1, function(val)
+    ammo_clip_y = val * 0.01
+end)
+
+local MAIN_COLOR = {r = 1, g = 1, b = 1, a = 0.8}
+local OUT_OF_AMMO_COLOR = {r = 1, g = 0, b = 0, a = 0.8}
+local COMPASS_COLOR = {r = 1, g = 0, b = 1, a = 0.8}
+local STREET_COLOR = {r = 1, g = 0, b = 1, a = 0.8}
+
+local COLORING = ROOT:list('Coloring')
+
+COLORING:colour('Main color', {'nhmaincolor'}, '', MAIN_COLOR, true, function(color)
+    MAIN_COLOR = color
+end)
+
+COLORING:colour('Out of ammo color', {'nhoutcolor'}, '', OUT_OF_AMMO_COLOR, true, function(color)
+    OUT_OF_AMMO_COLOR = color
+end)
+
+COLORING:colour('Compass color', {'nhcompasscolor'}, '', COMPASS_COLOR, true, function(color)
+    COMPASS_COLOR = color
+end)
+
+COLORING:colour('Street color', {'nhstreetcolor'}, '', STREET_COLOR, true, function(color)
+    STREET_COLOR = color
+end)
+
+local gap = 0.02
+
+
+local street_name = {}
+local last_street_a = 0
+local last_street_b = 0
+
+
+local laststreet_name = {}
+local street_a_mem = memory.alloc(4)
+local street_b_mem = memory.alloc(4)
+local street = {}
+
+-- thank you chatgpt very cool!
+
+function get_compass_dir()
+    local heading = GET_ENTITY_HEADING(players.user_ped())
+    if heading >= 337.5 or heading < 22.5 then
+        return "N"
+    elseif heading >= 22.5 and heading < 67.5 then
+        return "NE"
+    elseif heading >= 67.5 and heading < 112.5 then
+        return "E"
+    elseif heading >= 112.5 and heading < 157.5 then
+        return "SE"
+    elseif heading >= 157.5 and heading < 202.5 then
+        return "S"
+    elseif heading >= 202.5 and heading < 247.5 then
+        return "SW"
+    elseif heading >= 247.5 and heading < 292.5 then
+        return "W"
+    elseif heading >= 292.5 and heading < 337.5 then
+        return "NW"
+    end
+end
+
+local wep_hash_ptr = memory.alloc(4)
+local ammo_in_clip_ptr = memory.alloc(4)
+local cur_total_ammo_for_gun = 0
+memory.write_int(ammo_in_clip_ptr, 0)
+
+util.create_tick_handler(function()
+    if show_street_area then
+        local cur_street_a
+        local cur_street_b
+
+        HIDE_HUD_COMPONENT_THIS_FRAME(7)
+        HIDE_HUD_COMPONENT_THIS_FRAME(9)
+        local player_pos = players.get_position(players.user())
+        GET_STREET_NAME_AT_COORD(player_pos.x, player_pos.y, player_pos.z, street_a_mem, street_b_mem)
+        local cur_street_a = util.get_label_text(memory.read_int(street_a_mem))
+        local cur_street_b = util.get_label_text(memory.read_int(street_b_mem))
+
+        if cur_street_a == last_street_b then 
+            cur_street_a = last_street_a
+            cur_street_b = last_street_b
+        end
+
+        if cur_street_a ~= 'NULL' then
+            last_street_a = cur_street_a
+            directx.draw_text(x_pos, y_pos, cur_street_a, 6, 0.7, STREET_COLOR, true)
+        end
+
+        if cur_street_b ~= 'NULL' then
+            last_street_b = cur_street_b
+            directx.draw_text(x_pos, y_pos + gap, cur_street_b, 6, 0.7, STREET_COLOR, true)
+        end
+    end
+
+    if show_compass then
+        local compass_dir = get_compass_dir()
+        directx.draw_text(compass_x_pos, compass_y_pos, compass_dir, 5, 1.2, COMPASS_COLOR, true)
+    end
+
+    local veh = entities.get_user_vehicle_as_pointer(false)
+    if show_gunhud and (veh ~= 0 and IS_PED_DOING_DRIVEBY(players.user_ped()) or veh == 0) then 
+        GET_CURRENT_PED_WEAPON(players.user_ped(), wep_hash_ptr, true)
+        local wep_hash = memory.read_int(wep_hash_ptr)
+        local wep_name = util.reverse_joaat(wep_hash)
+        if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
+            if wep_name == '' then 
+                pluto_switch wep_hash do
+                    case 350597077:
+                        wep_name = 'WEAPON_TACTICALSMG'
+                        break
+                    case 911657153:
+                        wep_name = 'WEAPON_STUNGUN'
+                        break
+                    default:
+                        wep_name = 'WEAPON_UNKNOWN'
+                        break
+                end
+            end
+            wep_name = string.lower(wep_name)
+            if weapon_images[wep_name] == nil then
+                util.draw_debug_text(wep_name .. ' image not found (hash ' .. wep_hash .. ')')
+                wep_name = 'WEAPON_UNKNOWN'
+            else
+                directx.draw_texture(weapon_images[wep_name], 0.02, 0.02, 1.0, 0.5, gun_x, gun_y, 0, MAIN_COLOR)
+                GET_AMMO_IN_CLIP(players.user_ped(), wep_hash, ammo_in_clip_ptr)
+                local ammo_in_clip = memory.read_int(ammo_in_clip_ptr)
+                local max_clip_ammo = GET_MAX_AMMO_IN_CLIP(players.user_ped(), wep_hash, true)
+                if max_clip_ammo == ammo_in_clip then
+                    cur_total_ammo_for_gun = GET_AMMO_IN_PED_WEAPON(players.user_ped(), wep_hash) - max_clip_ammo
+                end
+                if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
+                    directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                    directx.draw_text(ammo_full_x, ammo_full_y, '||| ' .. cur_total_ammo_for_gun, 6, 0.45,  if cur_total_ammo_for_gun > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                end
+
+                directx.draw_line(line_x, line_y, line_x, line_y + line_length, MAIN_COLOR)
+            end
+        end
+    end
+
+end)
