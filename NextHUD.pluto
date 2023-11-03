@@ -237,8 +237,12 @@ util.create_tick_handler(function()
                     cur_total_ammo_for_gun = GET_AMMO_IN_PED_WEAPON(players.user_ped(), wep_hash) - max_clip_ammo
                 end
                 if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
-                    directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
-                    directx.draw_text(ammo_full_x, ammo_full_y, '||| ' .. cur_total_ammo_for_gun, 6, 0.45,  if cur_total_ammo_for_gun > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                    if ammo_in_clip == 1 then
+                        directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip + cur_total_ammo_for_gun, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                    else
+                        directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                        directx.draw_text(ammo_full_x, ammo_full_y, cur_total_ammo_for_gun + 1, 6, 0.45,  if cur_total_ammo_for_gun > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                    end
                 end
 
                 directx.draw_line(line_x, line_y, line_x, line_y + line_length, MAIN_COLOR)
@@ -247,3 +251,5 @@ util.create_tick_handler(function()
     end
 
 end)
+
+menu.my_root():hyperlink('Join Discord', 'https://discord.gg/zZ2eEjj88v', '')
