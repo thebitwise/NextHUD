@@ -101,11 +101,11 @@ POSITIONING:slider_float('Ammo clip Y', {}, '', 0, 1000, 79, 1, function(val)
 end)
 
 POSITIONING:slider_float('Ammo total X', {}, '', 0, 1000, 85, 1, function(val)
-    ammo_clip_x = val * 0.01
+    ammo_full_x = val * 0.01
 end)
 
 POSITIONING:slider_float('Ammo total Y', {}, '', 0, 1000, 81, 1, function(val)
-    ammo_clip_y = val * 0.01
+    ammo_full_y = val * 0.01
 end)
 
 local MAIN_COLOR = {r = 1, g = 1, b = 1, a = 0.8}
