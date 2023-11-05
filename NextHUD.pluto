@@ -12,6 +12,7 @@
 util.require_natives("2944b", "g")
 local ROOT = menu.my_root()
 local POSITIONING = ROOT:list('Positioning')
+local COLORING = ROOT:list('Coloring')
 
 local weapon_images = {}
 local resources_dir = filesystem.resources_dir() .. '\\nexthud\\'
@@ -28,18 +29,23 @@ for filesystem.list_files(resources_dir) as path do
 end
 
 local show_street_area = false 
-ROOT:toggle('Show street/area names', {'showstreet'}, '', function(on)
+ROOT:toggle('Street/area names', {'showstreet'}, '', function(on)
     show_street_area = on
 end)
 
 local show_compass = false
-ROOT:toggle('Show compass', {'showcompass'}, '', function(on)
+ROOT:toggle('Compass', {'showcompass'}, '', function(on)
     show_compass = on
 end)
 
 local show_gunhud = true
-ROOT:toggle('Show gun hud', {'showgunhud'}, '', function(on)
+ROOT:toggle('Gun hud', {'showgunhud'}, '', function(on)
     show_gunhud = on
+end, true)
+
+local gunhud_sep = true
+ROOT:toggle('Gun line', {'gunammoline'}, '', function(on)
+    gunhud_sep = on
 end, true)
 
 ROOT:toggle_loop('Disable vanilla ammo HUD', {'nodefaultgunammo'}, '', function(on)
@@ -108,12 +114,18 @@ POSITIONING:slider_float('Ammo total Y', {}, '', 0, 1000, 81, 1, function(val)
     ammo_full_y = val * 0.01
 end)
 
+POSITIONING:slider_float('Gun line X', {}, '', 0, 1000, 85, 1, function(val)
+    line_x = val * 0.01
+end)
+
+POSITIONING:slider_float('Gun line Y', {}, '', 0, 1000, 81, 1, function(val)
+    line_y = val * 0.01
+end)
+
 local MAIN_COLOR = {r = 1, g = 1, b = 1, a = 0.8}
 local OUT_OF_AMMO_COLOR = {r = 1, g = 0, b = 0, a = 0.8}
 local COMPASS_COLOR = {r = 1, g = 0, b = 1, a = 0.8}
 local STREET_COLOR = {r = 1, g = 0, b = 1, a = 0.8}
-
-local COLORING = ROOT:list('Coloring')
 
 COLORING:colour('Main color', {'nhmaincolor'}, '', MAIN_COLOR, true, function(color)
     MAIN_COLOR = color
@@ -244,8 +256,9 @@ util.create_tick_handler(function()
                         directx.draw_text(ammo_full_x, ammo_full_y, cur_total_ammo_for_gun + 1, 6, 0.45,  if cur_total_ammo_for_gun > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
                     end
                 end
-
-                directx.draw_line(line_x, line_y, line_x, line_y + line_length, MAIN_COLOR)
+                if gunhud_sep then
+                    directx.draw_line(line_x, line_y, line_x, line_y + line_length, MAIN_COLOR)
+                end
             end
         end
     end
