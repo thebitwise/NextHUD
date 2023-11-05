@@ -185,84 +185,85 @@ local cur_total_ammo_for_gun = 0
 memory.write_int(ammo_in_clip_ptr, 0)
 
 util.create_tick_handler(function()
-    if show_street_area then
-        local cur_street_a
-        local cur_street_b
+    if not util.is_session_transition_active() then
+        if show_street_area then
+            local cur_street_a
+            local cur_street_b
 
-        HIDE_HUD_COMPONENT_THIS_FRAME(7)
-        HIDE_HUD_COMPONENT_THIS_FRAME(9)
-        local player_pos = players.get_position(players.user())
-        GET_STREET_NAME_AT_COORD(player_pos.x, player_pos.y, player_pos.z, street_a_mem, street_b_mem)
-        local cur_street_a = util.get_label_text(memory.read_int(street_a_mem))
-        local cur_street_b = util.get_label_text(memory.read_int(street_b_mem))
+            HIDE_HUD_COMPONENT_THIS_FRAME(7)
+            HIDE_HUD_COMPONENT_THIS_FRAME(9)
+            local player_pos = players.get_position(players.user())
+            GET_STREET_NAME_AT_COORD(player_pos.x, player_pos.y, player_pos.z, street_a_mem, street_b_mem)
+            local cur_street_a = util.get_label_text(memory.read_int(street_a_mem))
+            local cur_street_b = util.get_label_text(memory.read_int(street_b_mem))
 
-        if cur_street_a == last_street_b then 
-            cur_street_a = last_street_a
-            cur_street_b = last_street_b
-        end
-
-        if cur_street_a ~= 'NULL' then
-            last_street_a = cur_street_a
-            directx.draw_text(x_pos, y_pos, cur_street_a, 6, 0.7, STREET_COLOR, true)
-        end
-
-        if cur_street_b ~= 'NULL' then
-            last_street_b = cur_street_b
-            directx.draw_text(x_pos, y_pos + gap, cur_street_b, 6, 0.7, STREET_COLOR, true)
-        end
-    end
-
-    if show_compass then
-        local compass_dir = get_compass_dir()
-        directx.draw_text(compass_x_pos, compass_y_pos, compass_dir, 5, 1.2, COMPASS_COLOR, true)
-    end
-
-    local veh = entities.get_user_vehicle_as_pointer(false)
-    if show_gunhud and (veh ~= 0 and IS_PED_DOING_DRIVEBY(players.user_ped()) or veh == 0) then 
-        GET_CURRENT_PED_WEAPON(players.user_ped(), wep_hash_ptr, true)
-        local wep_hash = memory.read_int(wep_hash_ptr)
-        local wep_name = util.reverse_joaat(wep_hash)
-        if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
-            if wep_name == '' then 
-                pluto_switch wep_hash do
-                    case 350597077:
-                        wep_name = 'WEAPON_TACTICALSMG'
-                        break
-                    case 911657153:
-                        wep_name = 'WEAPON_STUNGUN'
-                        break
-                    default:
-                        wep_name = 'WEAPON_UNKNOWN'
-                        break
-                end
+            if cur_street_a == last_street_b then 
+                cur_street_a = last_street_a
+                cur_street_b = last_street_b
             end
-            wep_name = string.lower(wep_name)
-            if weapon_images[wep_name] == nil then
-                util.draw_debug_text(wep_name .. ' image not found (hash ' .. wep_hash .. ')')
-                wep_name = 'WEAPON_UNKNOWN'
-            else
-                directx.draw_texture(weapon_images[wep_name], 0.02, 0.02, 1.0, 0.5, gun_x, gun_y, 0, MAIN_COLOR)
-                GET_AMMO_IN_CLIP(players.user_ped(), wep_hash, ammo_in_clip_ptr)
-                local ammo_in_clip = memory.read_int(ammo_in_clip_ptr)
-                local max_clip_ammo = GET_MAX_AMMO_IN_CLIP(players.user_ped(), wep_hash, true)
-                if max_clip_ammo == ammo_in_clip then
-                    cur_total_ammo_for_gun = GET_AMMO_IN_PED_WEAPON(players.user_ped(), wep_hash) - max_clip_ammo
-                end
-                if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
-                    if ammo_in_clip == 1 then
-                        directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip + cur_total_ammo_for_gun, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
-                    else
-                        directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
-                        directx.draw_text(ammo_full_x, ammo_full_y, cur_total_ammo_for_gun + 1, 6, 0.45,  if cur_total_ammo_for_gun > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+
+            if cur_street_a ~= 'NULL' then
+                last_street_a = cur_street_a
+                directx.draw_text(x_pos, y_pos, cur_street_a, 6, 0.7, STREET_COLOR, true)
+            end
+
+            if cur_street_b ~= 'NULL' then
+                last_street_b = cur_street_b
+                directx.draw_text(x_pos, y_pos + gap, cur_street_b, 6, 0.7, STREET_COLOR, true)
+            end
+        end
+
+        if show_compass then
+            local compass_dir = get_compass_dir()
+            directx.draw_text(compass_x_pos, compass_y_pos, compass_dir, 5, 1.2, COMPASS_COLOR, true)
+        end
+
+        local veh = entities.get_user_vehicle_as_pointer(false)
+        if show_gunhud and (veh ~= 0 and IS_PED_DOING_DRIVEBY(players.user_ped()) or veh == 0) then 
+            GET_CURRENT_PED_WEAPON(players.user_ped(), wep_hash_ptr, true)
+            local wep_hash = memory.read_int(wep_hash_ptr)
+            local wep_name = util.reverse_joaat(wep_hash)
+            if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
+                if wep_name == '' then 
+                    pluto_switch wep_hash do
+                        case 350597077:
+                            wep_name = 'WEAPON_TACTICALSMG'
+                            break
+                        case 911657153:
+                            wep_name = 'WEAPON_STUNGUN'
+                            break
+                        default:
+                            wep_name = 'WEAPON_UNKNOWN'
+                            break
                     end
                 end
-                if gunhud_sep then
-                    directx.draw_line(line_x, line_y, line_x, line_y + line_length, MAIN_COLOR)
+                wep_name = string.lower(wep_name)
+                if weapon_images[wep_name] == nil then
+                    util.draw_debug_text(wep_name .. ' image not found (hash ' .. wep_hash .. ')')
+                    wep_name = 'WEAPON_UNKNOWN'
+                else
+                    directx.draw_texture(weapon_images[wep_name], 0.02, 0.02, 1.0, 0.5, gun_x, gun_y, 0, MAIN_COLOR)
+                    GET_AMMO_IN_CLIP(players.user_ped(), wep_hash, ammo_in_clip_ptr)
+                    local ammo_in_clip = memory.read_int(ammo_in_clip_ptr)
+                    local max_clip_ammo = GET_MAX_AMMO_IN_CLIP(players.user_ped(), wep_hash, true)
+                    if max_clip_ammo == ammo_in_clip then
+                        cur_total_ammo_for_gun = GET_AMMO_IN_PED_WEAPON(players.user_ped(), wep_hash) - max_clip_ammo
+                    end
+                    if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
+                        if ammo_in_clip == 1 then
+                            directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip + cur_total_ammo_for_gun, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                        else
+                            directx.draw_text(ammo_clip_x, ammo_clip_y, ammo_in_clip, 6, 0.8, if ammo_in_clip > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                            directx.draw_text(ammo_full_x, ammo_full_y, cur_total_ammo_for_gun + 1, 6, 0.45,  if cur_total_ammo_for_gun > 0 then MAIN_COLOR else OUT_OF_AMMO_COLOR)
+                        end
+                    end
+                    if gunhud_sep then
+                        directx.draw_line(line_x, line_y, line_x, line_y + line_length, MAIN_COLOR)
+                    end
                 end
             end
         end
     end
-
 end)
 
 menu.my_root():hyperlink('Join Discord', 'https://discord.gg/zZ2eEjj88v', '')
