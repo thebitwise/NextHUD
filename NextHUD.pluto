@@ -225,9 +225,9 @@ util.create_tick_handler(function()
             local wep_name = util.reverse_joaat(wep_hash)
             if GET_WEAPON_DAMAGE_TYPE(wep_hash) ~= 2 then
                 if wep_name == '' then 
-                    pluto_switch wep_hash do
+                    switch wep_hash do
                         case 350597077:
-                            wep_name = 'WEAPON_TACTICALSMG'
+                            wep_name = 'WEAPON_TECPISTOL'
                             break
                         case 911657153:
                             wep_name = 'WEAPON_STUNGUN'
@@ -239,7 +239,7 @@ util.create_tick_handler(function()
                 end
                 wep_name = string.lower(wep_name)
                 if weapon_images[wep_name] == nil then
-                    util.draw_debug_text(wep_name .. ' image not found (hash ' .. wep_hash .. ')')
+                    --util.draw_debug_text(wep_name .. ' image not found (hash ' .. wep_hash .. ')')
                     wep_name = 'WEAPON_UNKNOWN'
                 else
                     directx.draw_texture(weapon_images[wep_name], 0.02, 0.02, 1.0, 0.5, gun_x, gun_y, 0, MAIN_COLOR)
